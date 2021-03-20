@@ -19,4 +19,9 @@ class Comment extends Model
     {
         return Carbon::parse($date)->format('d-M-Y H:i:s');
     }
+
+    public function getUpdatedAtAttribute($date)
+    {
+        return Carbon::parse($date)->format('d-M-Y H:i:s');
+    }
 }

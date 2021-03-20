@@ -2,34 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FilmScore;
 use Illuminate\Http\Request;
-use App\Models\Comment;
 use Illuminate\Support\Facades\Auth;
 
-class CommentController extends Controller
+class FilmScoreController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index($id)
     {
-        $reverse = '';
-        if($request->reverse == "true")
+        if (FilmScore::where('user_id', '=', Auth::id())->where('film_id', '=', $id)->exists())
         {
-            $reverse = 'asc';
+            return FilmScore::select('score')->where('user_id', '=', Auth::id())->where('film_id', '=', $id)->get()[0]->score;
         }
         else
         {
-            $reverse = 'desc';
+            return 0;
         }
-
-        return Comment::join('users', 'comments.user_id', '=', 'users.id')
-                        ->select('comments.comment', 'comments.id', 'comments.created_at', 'comments.updated_at', 'comments.user_id', 'users.name', 'users.image_path')
-                        ->where('comments.film_id', '=', $request->film_id)
-                        ->orderBy('comments.created_at', $reverse)
-                        ->get();
     }
 
     /**
@@ -50,19 +43,29 @@ class CommentController extends Controller
      */
     public function store(Request $request)
     {
+        if (FilmScore::where('user_id', '=', Auth::id())->where('film_id', '=', $request->film_id)->exists())
+        {
+            $scoreId = FilmScore::select('id')
+                                ->where('user_id', '=', Auth::id())
+                                ->where('film_id', '=', $request->film_id)
+                                ->get();
+            return $this->update($request, $scoreId[0]->id);
+        }
+
         $request->validate([
-            'comment' => ['required'],
+            'score' => ['required'],
             'film_id' => ['required']
         ]);
 
-        $comment = new Comment([
-            'comment' => $request->input('comment'),
+        $score = new FilmScore([
+            'score' => $request->input('score'),
             'film_id' => $request->input('film_id'),
             'user_id' => Auth::id()
         ]);
-        $comment->save();
+        $score->save();
+        $score = FilmScore::avg('score');
 
-        return $comment;
+        return $score;
     }
 
     /**
@@ -97,18 +100,19 @@ class CommentController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'comment' => ['required']
+            'score' => ['required']
         ]);
 
-        $comment = Comment::find($id);
-        if($comment->user_id != Auth::id())
-        {
-            return response()->json('Error!');
-        }
-        $comment->comment = $request->comment;
-        $comment->save();
+        $score = FilmScore::find($id);
+        $score->score = $request->score;
+        $score->save();
 
-        return response()->json('Product updated!');
+        $score = FilmScore::selectRaw('AVG(score) as score')
+                            ->where('film_id', '=', $request->film_id)
+                            ->groupBy('film_id')
+                            ->get();
+
+        return $score[0]->score;
     }
 
     /**
@@ -119,13 +123,6 @@ class CommentController extends Controller
      */
     public function destroy($id)
     {
-        $comment = Comment::find($id);
-        if($comment->user_id != Auth::id())
-        {
-            return response()->json('Error!');
-        }
-        $comment->delete();
-
-        return response()->json('The post successfully deleted');
+        //
     }
 }

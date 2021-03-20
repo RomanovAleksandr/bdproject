@@ -11,6 +11,7 @@
         <div>
             <input type="file" @change="onFileSelected">
             <button @click="onUpload">Upload</button>
+            <button @click="deleteImage">Delete</button>
         </div>      
       </div>
     </div>
@@ -37,6 +38,13 @@ export default {
         axios.post('api/upload-image', fd)
           .then(Response => {
               this.user.image_path = Response.data.path
+          })
+      },
+      deleteImage()
+      {
+        axios.get('api/delete-image')
+          .then(Response => {
+              this.user.image_path = null;
           })
       }
   },

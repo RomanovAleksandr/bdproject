@@ -1,12 +1,29 @@
 <template>
-	<div class="home text-center py-5 mt-5">
-    <h2 v-if="user">{{ user.name }}, {{ user.email }}</h2>
-    <div class="container d-flex">
+	<div class="home py-5 mt-5">
+    <div class="container">
+		<div>
+			<label>genre</label>
+			<select class="form-select" aria-label="Default select example" v-model="searchGenre">
+				<option value="all">all</option>
+				<option v-for="genre in genresSelect" :value="genre.id">{{genre.genre}}</option>
+			</select>
+			<label>year</label>
+     		<select class="form-select" aria-label="Default select example" v-model="searchYear">
+				 <option value="all">all</option>
+				<option v-for="year in years" :value="year">{{ year }}</option>
+			</select>
+			<div class="input-group">
+				<input type="search" class="form-control rounded" placeholder="Search" aria-label="Search"
+					aria-describedby="search-addon" v-model="searchWord" />
+				<button type="button" class="btn btn-outline-primary" v-on:click="searchByParameter">search</button>
+			</div>
+		</div>
+		<div class="d-flex">
 		<div 
 				v-for="film in films" 
 				v-bind:key="film.id" 
-				class="text-dark text-decoration-none">
-			<div class="card" style="width: 18rem;">
+				class="text-decoration-none">
+			<div class="card text-center" style="width: 18rem;">
 				<img :src="film.poster" class="card-img-top" alt="...">
 				<div class="card-body">
 					<router-link
@@ -15,19 +32,14 @@
 						<h5 class="card-title">{{film.title}}</h5>
 					</router-link>
 					<p class="card-text">{{film.year}}</p>
-					<!-- <router-link 
-						v-for="genre in genres" 
-						v-bind:key="genre.id + genre.film_id" 
-						class="text-dark text-decoration-none" 
-						exact-active-class="true" 
-						:to="{ name: 'Home', params: { genre_id: genre.id }}">
-						<p v-if="genre.film_id === film.id" class="card-text">{{genre.genre}}</p>
-					</router-link> -->
-					<div v-for="genre in genres" v-bind:key="genre.id + genre.film_id">
-						<p v-if="genre.film_id === film.id" v-on:click="getGenre(genre.id)">{{genre.genre}} </p>
+					<div class="d-flex justify-content-around">
+						<div v-for="genre in genres" v-bind:key="genre.id + genre.film_id">
+							<button class="btn btn-danger" v-if="genre.film_id === film.id" v-on:click="getGenre(genre.id)">{{genre.genre}}</button>
+						</div>
 					</div>
 				</div>
 			</div>
+		</div>
 		</div>
     </div>
   </div>
@@ -39,7 +51,11 @@
 		return {
 		user: null,
 		films: [],
-		genres: []
+		genres: [],
+		genresSelect: [],
+		searchYear: 'all',
+		searchGenre: 'all',
+		searchWord: '',
 		};
 	},
 	watch: {
@@ -54,8 +70,13 @@
 			axios.get('/api/user').then(Response =>{
 				this.user = Response.data;
 			})
-		}
-		//this.loadFilm();	
+		}	
+	},
+	computed : {
+		years () {
+			const year = new Date().getFullYear()
+			return Array.from({length: year - 1900}, (value, index) => 1901 + index)
+		},
 	},
 	methods: {
 		loadFilm() {
@@ -65,11 +86,16 @@
 				.then(res => {
 				this.films = res.data.films;
 				this.genres = res.data.genres;
+				this.genresSelect = res.data.allGenres
 				})
 			},
 		getGenre(genre_id) {
 			this.$router.replace({ query: { 'genre_id': genre_id } }).catch(()=>{});
-		}
+		},
+		searchByParameter()
+		{
+			this.$router.replace({ query: { 'genre_id': this.searchGenre, 'year': this.searchYear, 'search': this.searchWord } }).catch(()=>{});
+		},
 		}
 	};
 </script>

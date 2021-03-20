@@ -33,4 +33,15 @@ class UserController extends Controller
             ]);
         }
     }
+
+    public function deleteImage(Request $request)
+    {
+        if (Auth::check()) {
+            $user = User::find(Auth::id());
+            Storage::disk('public')->delete($user->image_path);
+            $user->image_path = null;
+            $user->save();
+            $user->refresh();
+        }
+    }
 }
