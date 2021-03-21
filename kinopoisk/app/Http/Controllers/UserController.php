@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FilmScore;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class UserController extends Controller
 {
@@ -42,6 +44,19 @@ class UserController extends Controller
             $user->image_path = null;
             $user->save();
             $user->refresh();
+        }
+    }
+
+    public function userData()
+    {
+        if (Auth::check()) {
+            $userData = FilmScore::where('user_id', '=', Auth::id())
+                                    ->select(FilmScore::raw('DATE(created_at) as date'), FilmScore::raw('count(*) as scores'))
+                                    ->groupBy('date')
+                                    ->get();
+            return response()->json(
+                $userData,
+            );
         }
     }
 }

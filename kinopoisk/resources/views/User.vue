@@ -15,15 +15,23 @@
         </div>      
       </div>
     </div>
+	<div class="small">
+		<line-chart :chart-data="datacollection"></line-chart>
+	</div>
   </div>
 </template>
 
 <script>
+import LineChart from '../js/components/LineChart.vue'
 export default {
+  components: {
+      LineChart
+    },
   data() {
     return {
       user: null,
       input_img: null,
+	  datacollection: null
     };
   },
   methods: {
@@ -46,12 +54,34 @@ export default {
           .then(Response => {
               this.user.image_path = null;
           })
-      }
+      },
+	  fillData (data) {
+        this.datacollection = {
+          labels: data.map(a => a.date),
+          datasets: [
+            {
+              label: 'Scores',
+              backgroundColor: '#f87979',
+              data: data.map(a => a.scores)
+            }
+          ]
+        }
+      },
   },
   mounted() {
     axios.get('/api/user').then(Response =>{
         this.user = Response.data;
     });
+	axios.get('/api/user-data').then(Response =>{
+        this.fillData(Response.data)
+		console.log(Response.data)
+    });
   }
 };
 </script>
+
+<style>
+  .small {
+    max-width: 600px;
+  }
+</style>
